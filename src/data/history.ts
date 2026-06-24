@@ -13,7 +13,7 @@ export const historyEras: HistoryEra[] = [
     years: "1400 – 1600",
     description:
       "A rebirth of classical ideals — humanism, perspective, and luminous color transformed European painting.",
-    artworkIds: ["birth-of-venus", "mona-lisa"],
+    artworkIds: ["map-of-hell", "last-supper"],
   },
   {
     id: "baroque",
@@ -21,7 +21,7 @@ export const historyEras: HistoryEra[] = [
     years: "1600 – 1750",
     description:
       "Drama, light, and intimate domestic scenes. Masters captured everyday life with extraordinary precision.",
-    artworkIds: ["girl-pearl-earring"],
+    artworkIds: ["view-of-delft"],
   },
   {
     id: "romanticism",
@@ -37,6 +37,6 @@ export const historyEras: HistoryEra[] = [
     years: "1850 – 1910",
     description:
       "Color, emotion, and ornament pushed to new extremes — the birth of modern art as we know it.",
-    artworkIds: ["starry-night", "the-scream", "the-kiss"],
+    artworkIds: ["starry-night", "the-scream", "birch-forest"],
   },
 ];

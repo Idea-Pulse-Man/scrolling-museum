@@ -9,7 +9,18 @@ import HistoryView from "./HistoryView";
 import BuyView from "./BuyView";
 import CreateView from "./CreateView";
 import ArtistProfileModal from "./ArtistProfileModal";
+import TutorialCoach from "./TutorialCoach";
 import Toast, { type ToastState } from "./Toast";
+import type { TutorialAction } from "./tutorial";
+
+// The gesture each tutorial step teaches, in order.
+const TUTORIAL_ALLOW: TutorialAction[] = [
+  "scroll",
+  "placard",
+  "artist",
+  "fit",
+  "clean",
+];
 
 export default function MobileShell() {
   const [toast, setToast] = useState<ToastState | null>(null);
@@ -17,6 +28,16 @@ export default function MobileShell() {
   const [activeArtist, setActiveArtist] = useState<Artist | null>(null);
   const [clean, setClean] = useState(false);
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Interactive, learn-by-doing tutorial. Mock-only with no persistence — it
+  // restarts on refresh. The user performs each real gesture to advance.
+  const [tutorialActive, setTutorialActive] = useState(true);
+  const [tutorialStep, setTutorialStep] = useState(0);
+  const [resetToken, setResetToken] = useState(0);
+  // True during the brief pause after a correct gesture, before the next step
+  // appears — used to show a "got it" confirmation so the wait feels responsive.
+  const [advancing, setAdvancing] = useState(false);
+  const advancingRef = useRef(false);
 
   const showToast = useCallback(
     (message: string, variant: ToastState["variant"] = "default") => {
@@ -32,10 +53,70 @@ export default function MobileShell() {
     if (artist) setActiveArtist(artist);
   }, []);
 
-  const handleTabChange = useCallback((tab: Tab) => {
-    setActiveTab(tab);
-    setClean(false);
+  const handleTabChange = useCallback(
+    (tab: Tab) => {
+      if (tutorialActive) return;
+      setActiveTab(tab);
+      setClean(false);
+    },
+    [tutorialActive]
+  );
+
+  const endTutorial = useCallback(() => {
+    setTutorialActive(false);
+    setActiveArtist(null);
+    setResetToken((t) => t + 1); // return the feed to a neutral state
   }, []);
+
+  // Advance the tutorial when the user performs the gesture the current step
+  // is teaching. We let the real result show briefly, then move on (closing any
+  // sheet/modal so the next gesture isn't blocked).
+  const reportGesture = useCallback(
+    (action: TutorialAction) => {
+      if (!tutorialActive || advancingRef.current) return;
+      if (action !== TUTORIAL_ALLOW[tutorialStep]) return;
+
+      advancingRef.current = true;
+      setAdvancing(true);
+      const advance = () => {
+        setTutorialStep((s) => s + 1);
+        advancingRef.current = false;
+        setAdvancing(false);
+      };
+
+      switch (action) {
+        case "scroll":
+          setTimeout(advance, 650);
+          break;
+        case "placard":
+          setTimeout(() => {
+            setResetToken((t) => t + 1); // close the placard
+            advance();
+          }, 1200);
+          break;
+        case "artist":
+          setTimeout(() => {
+            setActiveArtist(null); // close the artist profile
+            advance();
+          }, 1200);
+          break;
+        case "fit":
+          setTimeout(advance, 1000);
+          break;
+        case "clean":
+          setTimeout(advance, 800);
+          break;
+      }
+    },
+    [tutorialActive, tutorialStep]
+  );
+
+  const tutorialBridge = {
+    active: tutorialActive,
+    allow: tutorialActive ? TUTORIAL_ALLOW[tutorialStep] ?? null : null,
+    report: reportGesture,
+    resetToken,
+  };
 
   return (
     <div className="flex min-h-[100dvh] w-full items-center justify-center bg-neutral-950 sm:bg-neutral-900 sm:py-6">
@@ -66,6 +147,7 @@ export default function MobileShell() {
               initial={{ opacity: 0, y: -8 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -8 }}
+              className={tutorialActive ? "pointer-events-none" : undefined}
             >
               <TopTabs active={activeTab} onChange={handleTabChange} />
             </motion.div>
@@ -86,6 +168,7 @@ export default function MobileShell() {
                 showToast={showToast}
                 onOpenArtist={openArtist}
                 onCleanChange={setClean}
+                tutorial={tutorialBridge}
               />
             </motion.div>
           )}
@@ -135,6 +218,14 @@ export default function MobileShell() {
         <ArtistProfileModal
           artist={activeArtist}
           onClose={() => setActiveArtist(null)}
+        />
+
+        <TutorialCoach
+          open={tutorialActive}
+          step={tutorialStep}
+          advancing={advancing}
+          onSkip={endTutorial}
+          onStart={endTutorial}
         />
       </div>
     </div>

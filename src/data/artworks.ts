@@ -5,24 +5,24 @@ import type { Artwork } from "./types";
  * to a sized thumbnail of the original public-domain file. This keeps the mock
  * data resilient without hard-coding fragile hashed CDN paths.
  */
-const wm = (file: string, width = 1200) =>
+const wm = (file: string, width = 1000) =>
   `https://commons.wikimedia.org/wiki/Special:FilePath/${encodeURIComponent(
     file
   )}?width=${width}`;
 
 export const artworks: Artwork[] = [
   {
-    id: "girl-pearl-earring",
-    title: "Girl with a Pearl Earring",
+    id: "view-of-delft",
+    title: "View of Delft",
     artistId: "vermeer",
-    year: "c. 1665",
+    year: "c. 1660 – 1661",
     medium: "Oil on canvas",
     source: "Mauritshuis, The Hague",
-    image: wm("1665 Girl with a Pearl Earring.jpg"),
-    accent: "#1c2330",
+    image: wm("Johannes Vermeer - View of Delft - 92 - Mauritshuis.jpg"),
+    accent: "#243140",
     description:
-      "Often called the 'Mona Lisa of the North,' this tronie captures an anonymous girl turning toward the viewer, lips parted as if about to speak. The luminous pearl and the soft fall of light on her face make it one of the most beloved portraits ever painted.",
-    tags: ["Baroque", "Portrait", "Oil Painting", "Dutch Golden Age"],
+      "Vermeer's only surviving cityscape and the most celebrated view in Dutch art. Morning light breaks over the harbour walls of Delft, glinting on still water while the town waits in serene silence — a study in atmosphere, reflection, and the poetry of an ordinary day.",
+    tags: ["Baroque", "Cityscape", "Oil Painting", "Dutch Golden Age"],
   },
   {
     id: "starry-night",
@@ -51,45 +51,45 @@ export const artworks: Artwork[] = [
     tags: ["Ukiyo-e", "Landscape", "Woodblock Print", "Edo Period"],
   },
   {
-    id: "mona-lisa",
-    title: "Mona Lisa",
+    id: "last-supper",
+    title: "The Last Supper",
     artistId: "da-vinci",
-    year: "c. 1503 – 1519",
-    medium: "Oil on poplar panel",
-    source: "Musée du Louvre",
-    image: wm("Mona Lisa, by Leonardo da Vinci, from C2RMF retouched.jpg"),
-    accent: "#2a2113",
+    year: "c. 1495 – 1498",
+    medium: "Tempera and oil on plaster",
+    source: "Santa Maria delle Grazie, Milan",
+    image: wm(
+      "Leonardo da Vinci (1452-1519) - The Last Supper (1495-1498).jpg"
+    ),
+    accent: "#2a2418",
     description:
-      "Perhaps the most recognized painting in history, the Mona Lisa is celebrated for the sitter's enigmatic expression and Leonardo's pioneering use of sfumato — the soft, smoky transitions between light and shadow that give her an extraordinary lifelike presence.",
-    tags: ["Renaissance", "Portrait", "Oil Painting", "Sfumato"],
+      "Leonardo captures the charged instant after Christ announces that one among the table will betray him. Each figure reacts in a wave of gesture and emotion, while a rigorous one-point perspective draws every line toward his calm, central face — a landmark of Renaissance composition.",
+    tags: ["Renaissance", "Fresco", "Religious", "Perspective"],
   },
   {
-    id: "the-kiss",
-    title: "The Kiss",
+    id: "birch-forest",
+    title: "Birch Forest",
     artistId: "klimt",
-    year: "1907 – 1908",
-    medium: "Oil and gold leaf on canvas",
-    source: "Österreichische Galerie Belvedere",
-    image: wm("Gustav Klimt 016.jpg"),
-    accent: "#3a2c08",
+    year: "1903",
+    medium: "Oil on canvas",
+    source: "Paul G. Allen Collection",
+    image: wm("Gustav Klimt, Birch Forest, 1903 - Paul G. Allen Collection.jpg"),
+    accent: "#3a2f1c",
     description:
-      "The crowning work of Klimt's 'golden phase,' two lovers embrace within a shimmering field of gold leaf and ornamental pattern. The painting fuses intimacy and decoration into a radiant emblem of early modern Vienna.",
-    tags: ["Art Nouveau", "Symbolism", "Gold Leaf", "Figures"],
+      "Klimt dissolves a stand of birch trees into a shimmering tapestry of gold, russet, and green. Slim white trunks rise like columns from a carpet of fallen leaves, turning the forest floor into the same ornamental, near-abstract surface that defined his celebrated golden phase.",
+    tags: ["Art Nouveau", "Landscape", "Oil Painting", "Pattern"],
   },
   {
-    id: "birth-of-venus",
-    title: "The Birth of Venus",
+    id: "map-of-hell",
+    title: "Map of Hell",
     artistId: "botticelli",
     year: "c. 1485",
-    medium: "Tempera on canvas",
-    source: "Uffizi Gallery, Florence",
-    image: wm(
-      "Sandro Botticelli - La nascita di Venere - Google Art Project - edited.jpg"
-    ),
-    accent: "#2c3526",
+    medium: "Silverpoint, ink and tempera on parchment",
+    source: "Vatican Library",
+    image: wm("Sandro Botticelli - La Carte de l'Enfer.jpg"),
+    accent: "#2a1a16",
     description:
-      "The goddess Venus arrives on shore, born from the sea foam and carried on a shell. Botticelli's flowing line and pale, luminous palette make this mythological allegory one of the defining images of the Italian Renaissance.",
-    tags: ["Renaissance", "Mythology", "Tempera", "Allegory"],
+      "Drawn to illustrate Dante's Inferno, Botticelli charts the funnel of Hell as a vast inverted cone descending through nine circles toward the centre of the earth. Tiny figures crowd each terrace, transforming a cosmological diagram into one of the Renaissance's most haunting visions.",
+    tags: ["Renaissance", "Drawing", "Allegory", "Dante"],
   },
   {
     id: "the-scream",

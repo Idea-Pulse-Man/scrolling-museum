@@ -6,8 +6,11 @@ import type { Artwork, Artist } from "@/data";
 import BlurImage from "./BlurImage";
 import ActionRail from "./ActionRail";
 import HistoryPlacard from "./HistoryPlacard";
+import ArtDiscussion from "./ArtDiscussion";
 import { ChevronUpIcon } from "./Icons";
+import { artworkFooterClass } from "./artwork-layout";
 import type { ToastState } from "./Toast";
+import type { TutorialAction, TutorialBridge } from "./tutorial";
 
 interface ArtworkCardProps {
   artwork: Artwork;
@@ -16,7 +19,11 @@ interface ArtworkCardProps {
   showToast: (message: string, variant?: ToastState["variant"]) => void;
   onOpenArtist: (artistId: string) => void;
   onCleanChange: (clean: boolean) => void;
+  tutorial?: TutorialBridge;
 }
+
+const SWIPE_DISTANCE = 60;
+const LONG_PRESS_MS = 400;
 
 export default function ArtworkCard({
   artwork,
@@ -25,15 +32,37 @@ export default function ArtworkCard({
   showToast,
   onOpenArtist,
   onCleanChange,
+  tutorial,
 }: ArtworkCardProps) {
   const [placardOpen, setPlacardOpen] = useState(false);
+  const [discussionOpen, setDiscussionOpen] = useState(false);
   const [clean, setClean] = useState(false);
+  const [fit, setFit] = useState<"cover" | "contain">("contain");
+
   const holdTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const longPressFired = useRef(false);
+  const startTime = useRef(0);
   const startPos = useRef<{ x: number; y: number } | null>(null);
+  const footerStart = useRef<{ x: number; y: number } | null>(null);
 
   useEffect(() => {
     onCleanChange(clean);
   }, [clean, onCleanChange]);
+
+  // During the tutorial, only the gesture being taught is permitted; this keeps
+  // the user focused and prevents stray actions from firing out of order.
+  const gestureBlocked = (action: TutorialAction) =>
+    !!tutorial?.active && tutorial.allow !== action;
+
+  // When the tutorial advances, ask cards to return to a neutral state.
+  const resetToken = tutorial?.resetToken;
+  useEffect(() => {
+    if (resetToken === undefined) return;
+    setPlacardOpen(false);
+    setDiscussionOpen(false);
+    setClean(false);
+    setFit("contain");
+  }, [resetToken]);
 
   const clearHold = () => {
     if (holdTimer.current) {
@@ -42,18 +71,63 @@ export default function ArtworkCard({
     }
   };
 
-  const exitClean = () => {
-    clearHold();
-    setClean(false);
+  const toggleFit = () => {
+    setFit((prev) => (prev === "cover" ? "contain" : "cover"));
   };
 
-  // Long-press the artwork to enter "clean art" mode (hides all chrome),
-  // mirroring the "hold down to get rid of side bar" note in the sketch.
+  const openPlacard = () => {
+    if (gestureBlocked("placard")) return;
+    setPlacardOpen(true);
+    tutorial?.report("placard");
+  };
+
+  const handleFooterPointerDown = (e: React.PointerEvent) => {
+    footerStart.current = { x: e.clientX, y: e.clientY };
+  };
+
+  const handleFooterPointerUp = (e: React.PointerEvent) => {
+    const start = footerStart.current;
+    footerStart.current = null;
+    if (!start) return;
+
+    const dx = e.clientX - start.x;
+    const dy = e.clientY - start.y;
+    const adx = Math.abs(dx);
+    const ady = Math.abs(dy);
+
+    // Swipe up anywhere in the invisible footer opens the placard.
+    if (dy < -40 && ady > adx * 1.2) {
+      openPlacard();
+    }
+  };
+
+  const handleFooterPointerCancel = () => {
+    footerStart.current = null;
+  };
+
+  // During the scroll tutorial step, let native vertical panning reach the feed
+  // scroll container — pointer handlers on the artwork would block it.
+  const scrollTutorial = !!tutorial?.active && tutorial.allow === "scroll";
+  const placardTutorial = !!tutorial?.active && tutorial.allow === "placard";
+  const footerInteractive = !tutorial?.active || placardTutorial;
+
+  // Long-press enters a persistent "clean art" mode; a single tap restores the
+  // UI. Horizontal flicks switch context (artist) or framing (fit/fill). The
+  // museum placard opens from the bottom description button only.
   const handlePointerDown = (e: React.PointerEvent) => {
-    if (placardOpen) return;
+    if (placardOpen || discussionOpen) return;
     startPos.current = { x: e.clientX, y: e.clientY };
+    startTime.current = Date.now();
+    longPressFired.current = false;
     clearHold();
-    holdTimer.current = setTimeout(() => setClean(true), 320);
+    if (!clean) {
+      holdTimer.current = setTimeout(() => {
+        if (gestureBlocked("clean")) return;
+        setClean(true);
+        longPressFired.current = true;
+        tutorial?.report("clean");
+      }, LONG_PRESS_MS);
+    }
   };
 
   const handlePointerMove = (e: React.PointerEvent) => {
@@ -63,22 +137,68 @@ export default function ArtworkCard({
     if (dx > 8 || dy > 8) clearHold();
   };
 
+  const handlePointerUp = (e: React.PointerEvent) => {
+    clearHold();
+    const start = startPos.current;
+    startPos.current = null;
+    if (!start || longPressFired.current) return;
+
+    const dx = e.clientX - start.x;
+    const dy = e.clientY - start.y;
+    const adx = Math.abs(dx);
+    const ady = Math.abs(dy);
+    const dt = Date.now() - startTime.current;
+
+    // Horizontal swipe (does not conflict with the vertical snap feed).
+    if (adx > SWIPE_DISTANCE && adx > ady * 1.3) {
+      if (dx < 0) {
+        // swipe left → artist profile
+        if (gestureBlocked("artist")) return;
+        onOpenArtist(artist.id);
+        tutorial?.report("artist");
+      } else {
+        // swipe right → Fit / Fill
+        if (gestureBlocked("fit")) return;
+        toggleFit();
+        tutorial?.report("fit");
+      }
+      return;
+    }
+
+    // Tap → bring the UI back when in clean mode.
+    if (adx < 8 && ady < 8 && dt < 300 && clean) {
+      setClean(false);
+    }
+  };
+
+  const handlePointerCancel = () => {
+    clearHold();
+    startPos.current = null;
+  };
+
   return (
     <section className="relative h-full min-h-0 w-full snap-start snap-always overflow-hidden bg-ink">
-      {/* Artwork */}
+      {/* Artwork — no pointer handlers during scroll tutorial so swipes reach the feed. */}
       <div
-        className="absolute inset-0"
-        onPointerDown={handlePointerDown}
-        onPointerMove={handlePointerMove}
-        onPointerUp={exitClean}
-        onPointerLeave={exitClean}
-        onPointerCancel={exitClean}
+        className="absolute inset-0 touch-pan-y"
+        {...(scrollTutorial
+          ? {}
+          : {
+              onPointerDown: handlePointerDown,
+              onPointerMove: handlePointerMove,
+              onPointerUp: handlePointerUp,
+              onPointerLeave: handlePointerCancel,
+              onPointerCancel: handlePointerCancel,
+            })}
       >
         <BlurImage
           src={artwork.image}
           alt={`${artwork.title} by ${artist.name}`}
           accent={artwork.accent}
           priority={priority}
+          fit={fit}
+          zoomable
+          syncToken={resetToken}
         />
       </div>
 
@@ -106,12 +226,29 @@ export default function ArtworkCard({
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.3 }}
+            className={scrollTutorial ? "pointer-events-none" : undefined}
           >
-            <ActionRail showToast={showToast} />
+            <div className={tutorial?.active ? "pointer-events-none" : undefined}>
+              <ActionRail
+                artist={artist}
+                onOpenComments={() => setDiscussionOpen(true)}
+                showToast={showToast}
+              />
+            </div>
 
-            {/* Metadata */}
-            <div className="pointer-events-none absolute inset-x-0 bottom-0 z-30 p-5 pb-24">
-              <div className="pointer-events-auto max-w-[78%]">
+            {/* Invisible footer — structural bottom zone for metadata, the
+                description trigger, and tutorial step-2 anchoring. No visible
+                chrome; it only defines the interaction area at the bottom. */}
+            <footer
+              className={`absolute inset-x-0 bottom-0 z-30 flex flex-col justify-end ${artworkFooterClass} ${
+                footerInteractive ? "pointer-events-auto" : "pointer-events-none"
+              }`}
+              onPointerDown={handleFooterPointerDown}
+              onPointerUp={handleFooterPointerUp}
+              onPointerLeave={handleFooterPointerCancel}
+              onPointerCancel={handleFooterPointerCancel}
+            >
+              <div className="pointer-events-none max-w-[78%]">
                 <div className="mb-2.5 flex flex-wrap items-center gap-2">
                   <span className="rounded-full border border-emerald-300/30 bg-emerald-400/15 px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-emerald-200">
                     Public Domain
@@ -126,8 +263,12 @@ export default function ArtworkCard({
                 </h2>
 
                 <button
-                  onClick={() => onOpenArtist(artist.id)}
-                  className="mt-1.5 inline-flex items-center gap-2 text-[15px] text-white/85 transition-colors hover:text-white"
+                  onClick={() => {
+                    if (gestureBlocked("artist")) return;
+                    onOpenArtist(artist.id);
+                    tutorial?.report("artist");
+                  }}
+                  className="pointer-events-auto mt-1.5 inline-flex items-center gap-2 text-[15px] text-white/85 transition-colors hover:text-white"
                 >
                   <span className="flex h-6 w-6 items-center justify-center rounded-full bg-white/15 text-[10px] font-semibold backdrop-blur-md">
                     {artist.initials}
@@ -138,24 +279,37 @@ export default function ArtworkCard({
                   <span className="text-white/45">· {artwork.year}</span>
                 </button>
               </div>
-            </div>
 
-            {/* Swipe up for history */}
-            <div className="pointer-events-none absolute inset-x-0 bottom-7 z-30 flex justify-center">
-              <motion.button
-                onClick={() => setPlacardOpen(true)}
-                whileTap={{ scale: 0.96 }}
-                className="pointer-events-auto flex items-center gap-2 rounded-full border border-white/15 bg-black/30 px-4 py-2 text-xs font-medium text-white/90 backdrop-blur-md"
-              >
-                <motion.span
-                  animate={{ y: [0, -3, 0] }}
-                  transition={{ duration: 1.6, repeat: Infinity, ease: "easeInOut" }}
+              <div className="mt-3 flex justify-center">
+                <motion.button
+                  type="button"
+                  data-tutorial="placard-trigger"
+                  onClick={openPlacard}
+                  whileTap={{ scale: 0.96 }}
+                  animate={
+                    placardTutorial ? { scale: [1, 1.05, 1] } : undefined
+                  }
+                  transition={
+                    placardTutorial
+                      ? { duration: 1.6, repeat: Infinity, ease: "easeInOut" }
+                      : undefined
+                  }
+                  className={`pointer-events-auto flex items-center gap-2 rounded-full border px-4 py-2 text-xs font-medium backdrop-blur-md ${
+                    placardTutorial
+                      ? "border-white/35 bg-white/20 text-white ring-2 ring-white/20"
+                      : "border-white/15 bg-black/30 text-white/90"
+                  }`}
                 >
-                  <ChevronUpIcon className="h-4 w-4" />
-                </motion.span>
-                Swipe up for history
-              </motion.button>
-            </div>
+                  <motion.span
+                    animate={{ y: [0, -3, 0] }}
+                    transition={{ duration: 1.6, repeat: Infinity, ease: "easeInOut" }}
+                  >
+                    <ChevronUpIcon className="h-4 w-4" />
+                  </motion.span>
+                  Swipe up for description
+                </motion.button>
+              </div>
+            </footer>
           </motion.div>
         )}
       </AnimatePresence>
@@ -165,6 +319,12 @@ export default function ArtworkCard({
         artist={artist}
         open={placardOpen}
         onClose={() => setPlacardOpen(false)}
+      />
+
+      <ArtDiscussion
+        artwork={artwork}
+        open={discussionOpen}
+        onClose={() => setDiscussionOpen(false)}
       />
     </section>
   );
