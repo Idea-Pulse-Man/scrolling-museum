@@ -234,13 +234,44 @@ function HoldHint() {
   );
 }
 
-function GestureHint({ hint }: { hint: HintKey }) {
+function FooterSwipeUpHint() {
+  return (
+    <div className="flex flex-col items-center">
+      <span className="mb-2 rounded-full bg-white px-4 py-1.5 text-[11px] font-bold uppercase tracking-[0.18em] text-ink shadow-[0_4px_24px_rgba(0,0,0,0.45)]">
+        Swipe up
+      </span>
+      <div className="relative flex h-[4.5rem] w-32 items-end justify-center">
+        <div className="absolute inset-0 rounded-full bg-white/25 blur-xl" />
+        <SpotlightRing className="h-20 w-28" />
+        <motion.div
+          className="absolute top-0 text-white drop-shadow-[0_0_8px_rgba(255,255,255,0.8)]"
+          animate={{ opacity: [0.4, 1, 0.4], y: [2, -3, 2] }}
+          transition={{ duration: 1.2, repeat: Infinity, ease: "easeInOut" }}
+        >
+          <UpArrow className="h-7 w-7" />
+        </motion.div>
+        <motion.div
+          animate={{ y: [6, -10, 6] }}
+          transition={{ duration: 1.4, repeat: Infinity, ease: "easeInOut" }}
+        >
+          <Finger />
+        </motion.div>
+      </div>
+    </div>
+  );
+}
+
+function GestureHint({ hint, footer = false }: { hint: HintKey; footer?: boolean }) {
   if (hint === "left" || hint === "right") {
     return <HorizontalSwipeHint direction={hint} />;
   }
 
   if (hint === "hold") {
     return <HoldHint />;
+  }
+
+  if (hint === "swipe-up" && footer) {
+    return <FooterSwipeUpHint />;
   }
 
   const labels: Record<Exclude<HintKey, "left" | "right" | "hold">, string> = {
@@ -492,7 +523,10 @@ export default function TutorialCoach({
                           exit={{ opacity: 0 }}
                           transition={{ duration: 0.2 }}
                         >
-                          <GestureHint hint={current.hint} />
+                          <GestureHint
+                            hint={current.hint}
+                            footer={current.zone === "footer"}
+                          />
                         </motion.div>
                       )}
                     </AnimatePresence>

@@ -1,9 +1,9 @@
 /** Shared layout tokens for the invisible artwork footer and tutorial cues. */
-export const ARTWORK_FOOTER_HEIGHT = "9.5rem";
+export const ARTWORK_FOOTER_HEIGHT = "15rem";
 
 export const artworkFooterClass =
-  "min-h-[9.5rem] px-5 pb-[calc(env(safe-area-inset-bottom)+0.75rem)]";
+  "min-h-[15rem] px-5 pt-4 pb-[calc(env(safe-area-inset-bottom)+1rem)]";
 
-/** Positions the tutorial tap cue over the description trigger. */
+/** Positions the step-2 swipe cue directly above the description button. */
 export const tutorialFooterHintClass =
-  "bottom-[calc(env(safe-area-inset-bottom)+3.25rem)]";
+  "bottom-[calc(env(safe-area-inset-bottom)+1rem)]";

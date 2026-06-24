@@ -81,6 +81,11 @@ export default function ArtworkCard({
     tutorial?.report("placard");
   };
 
+  const scrollTutorial = !!tutorial?.active && tutorial.allow === "scroll";
+  const placardTutorial = !!tutorial?.active && tutorial.allow === "placard";
+  const footerInteractive = !tutorial?.active || placardTutorial;
+  const blockArtworkGestures = scrollTutorial || placardTutorial;
+
   const handleFooterPointerDown = (e: React.PointerEvent) => {
     footerStart.current = { x: e.clientX, y: e.clientY };
   };
@@ -95,8 +100,9 @@ export default function ArtworkCard({
     const adx = Math.abs(dx);
     const ady = Math.abs(dy);
 
-    // Swipe up anywhere in the invisible footer opens the placard.
-    if (dy < -40 && ady > adx * 1.2) {
+    // Swipe up anywhere in the footer opens the placard.
+    const threshold = placardTutorial ? 24 : 40;
+    if (dy < -threshold && ady > adx * 1.1) {
       openPlacard();
     }
   };
@@ -104,12 +110,6 @@ export default function ArtworkCard({
   const handleFooterPointerCancel = () => {
     footerStart.current = null;
   };
-
-  // During the scroll tutorial step, let native vertical panning reach the feed
-  // scroll container — pointer handlers on the artwork would block it.
-  const scrollTutorial = !!tutorial?.active && tutorial.allow === "scroll";
-  const placardTutorial = !!tutorial?.active && tutorial.allow === "placard";
-  const footerInteractive = !tutorial?.active || placardTutorial;
 
   // Long-press enters a persistent "clean art" mode; a single tap restores the
   // UI. Horizontal flicks switch context (artist) or framing (fit/fill). The
@@ -178,10 +178,10 @@ export default function ArtworkCard({
 
   return (
     <section className="relative h-full min-h-0 w-full snap-start snap-always overflow-hidden bg-ink">
-      {/* Artwork — no pointer handlers during scroll tutorial so swipes reach the feed. */}
+      {/* Artwork — no pointer handlers during scroll/placard tutorial. */}
       <div
         className="absolute inset-0 touch-pan-y"
-        {...(scrollTutorial
+        {...(blockArtworkGestures
           ? {}
           : {
               onPointerDown: handlePointerDown,
@@ -242,7 +242,7 @@ export default function ArtworkCard({
             <footer
               className={`absolute inset-x-0 bottom-0 z-30 flex flex-col justify-end ${artworkFooterClass} ${
                 footerInteractive ? "pointer-events-auto" : "pointer-events-none"
-              }`}
+              } ${placardTutorial ? "z-40" : ""}`}
               onPointerDown={handleFooterPointerDown}
               onPointerUp={handleFooterPointerUp}
               onPointerLeave={handleFooterPointerCancel}
@@ -280,7 +280,7 @@ export default function ArtworkCard({
                 </button>
               </div>
 
-              <div className="mt-3 flex justify-center">
+              <div className="mt-3 flex min-h-[6.5rem] w-full flex-col items-center justify-end pb-1">
                 <motion.button
                   type="button"
                   data-tutorial="placard-trigger"
@@ -294,11 +294,11 @@ export default function ArtworkCard({
                       ? { duration: 1.6, repeat: Infinity, ease: "easeInOut" }
                       : undefined
                   }
-                  className={`pointer-events-auto flex items-center gap-2 rounded-full border px-4 py-2 text-xs font-medium backdrop-blur-md ${
+                  className={`pointer-events-auto flex items-center gap-2 rounded-full border backdrop-blur-md ${
                     placardTutorial
-                      ? "border-white/35 bg-white/20 text-white ring-2 ring-white/20"
-                      : "border-white/15 bg-black/30 text-white/90"
-                  }`}
+                      ? "min-h-[52px] w-full max-w-[17rem] justify-center border-white/40 bg-white/20 px-5 py-3.5 text-sm text-white ring-2 ring-white/25"
+                      : "border-white/15 bg-black/30 px-4 py-2 text-xs text-white/90"
+                  } font-medium`}
                 >
                   <motion.span
                     animate={{ y: [0, -3, 0] }}
