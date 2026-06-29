@@ -1,82 +1,116 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { motion } from "framer-motion";
-import { artworks, getArtist, shopItems, type PrintFormat } from "@/data";
+import { useState } from "react";
+import { AnimatePresence, motion } from "framer-motion";
+import {
+  canvasProducts,
+  getArtwork,
+  getArtist,
+  CANVAS_SIZES,
+  priceForSize,
+  type CanvasSize,
+} from "@/data";
 import BlurImage from "./BlurImage";
+import { screenScrollClass, screenContentClass } from "./artwork-layout";
+import { CloseIcon, CheckIcon } from "./Icons";
 import type { ToastState } from "./Toast";
 
 interface BuyViewProps {
   showToast: (message: string, variant?: ToastState["variant"]) => void;
 }
 
-const FORMATS: PrintFormat[] = ["Poster", "Framed Print", "Canvas"];
+type BuySource = "museum" | "freelance";
 
 export default function BuyView({ showToast }: BuyViewProps) {
-  const [format, setFormat] = useState<PrintFormat>("Poster");
-  const [cartCount, setCartCount] = useState(0);
+  // Museum Art (public-domain) vs Freelance (artist-original) — matches the
+  // client's Buy-page sketch.
+  const [source, setSource] = useState<BuySource>("museum");
+  // The artwork id whose purchase sheet is open (null = closed).
+  const [activeId, setActiveId] = useState<string | null>(null);
+  const [size, setSize] = useState<CanvasSize>("Medium");
+  const [interested, setInterested] = useState(false);
 
-  const items = useMemo(
-    () => shopItems.filter((item) => item.format === format),
-    [format]
+  const visibleProducts = canvasProducts.filter((product) => {
+    const artwork = getArtwork(product.artworkId);
+    if (!artwork) return false;
+    return source === "freelance"
+      ? artwork.origin === "artist-original"
+      : artwork.origin !== "artist-original";
+  });
+
+  const activeProduct = canvasProducts.find(
+    (p) => p.artworkId === activeId
   );
+  const activeArtwork = activeId ? getArtwork(activeId) : undefined;
+  const activeArtist = activeArtwork
+    ? getArtist(activeArtwork.artistId)
+    : undefined;
 
-  const addToCart = (title: string) => {
-    setCartCount((c) => c + 1);
-    showToast(`${title} added to cart`);
+  const openSheet = (artworkId: string) => {
+    setActiveId(artworkId);
+    setSize("Medium");
+    setInterested(false);
   };
 
   return (
-    <div className="h-full overflow-y-auto overscroll-contain scroll-smooth [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-      <div className="px-5 pb-10 pt-[calc(env(safe-area-inset-top)+6.5rem)]">
-        <div className="flex items-start justify-between gap-4">
-          <div>
-            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-white/45">
-              Museum Shop
-            </p>
-            <h1 className="mt-2 font-serif text-[28px] leading-tight text-white">
-              Own the Art
-            </h1>
-            <p className="mt-2 max-w-[90%] text-[15px] leading-relaxed text-white/60">
-              Museum-quality prints of public-domain masterpieces, shipped to your
-              door.
-            </p>
-          </div>
-          {cartCount > 0 && (
-            <span className="mt-8 shrink-0 rounded-full border border-white/15 bg-white/10 px-3 py-1 text-xs font-medium text-white backdrop-blur-md">
-              Cart · {cartCount}
-            </span>
-          )}
-        </div>
+    <div className={screenScrollClass}>
+      <div className={screenContentClass}>
+        <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-white/45">
+          Canvas Shop
+        </p>
+        <h1 className="mt-2 font-serif text-[28px] leading-tight text-white">
+          Own the art
+        </h1>
+        <p className="mt-2 max-w-[92%] text-[15px] leading-relaxed text-white/60">
+          Gallery-grade canvas prints of every piece in Narsil. Choose a size and
+          register your interest — full checkout is on the way.
+        </p>
 
+        {/* Museum Art / Freelance toggle */}
         <div className="mt-6 flex gap-2">
-          {FORMATS.map((f) => (
+          {(
+            [
+              { id: "museum", label: "Museum Art" },
+              { id: "freelance", label: "Freelance" },
+            ] as { id: BuySource; label: string }[]
+          ).map((opt) => (
             <button
-              key={f}
-              onClick={() => setFormat(f)}
-              className={`rounded-full px-3.5 py-1.5 text-xs font-medium transition-colors ${
-                format === f
+              key={opt.id}
+              onClick={() => {
+                setSource(opt.id);
+                setActiveId(null);
+              }}
+              className={`rounded-full px-4 py-1.5 text-xs font-medium transition-colors ${
+                source === opt.id
                   ? "bg-white text-ink"
                   : "border border-white/15 bg-white/5 text-white/70 hover:text-white"
               }`}
             >
-              {f}
+              {opt.label}
             </button>
           ))}
         </div>
 
         <div className="mt-6 grid grid-cols-2 gap-3">
-          {items.map((item, index) => {
-            const artwork = artworks.find((a) => a.id === item.artworkId)!;
-            const artist = getArtist(artwork.artistId)!;
+          {visibleProducts.length === 0 && (
+            <p className="col-span-2 mt-6 text-center text-sm text-white/45">
+              No {source === "freelance" ? "freelance" : "museum"} canvases yet.
+            </p>
+          )}
+          {visibleProducts.map((product, index) => {
+            const artwork = getArtwork(product.artworkId);
+            const artist = artwork ? getArtist(artwork.artistId) : undefined;
+            if (!artwork) return null;
 
             return (
-              <motion.article
-                key={item.id}
+              <motion.button
+                key={product.id}
+                onClick={() => openSheet(artwork.id)}
                 initial={{ opacity: 0, y: 12 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: index * 0.04, duration: 0.3 }}
-                className="overflow-hidden rounded-2xl border border-white/10 bg-white/[0.03]"
+                transition={{ delay: Math.min(index * 0.03, 0.3), duration: 0.3 }}
+                whileTap={{ scale: 0.98 }}
+                className="overflow-hidden rounded-2xl border border-white/10 bg-white/[0.03] text-left"
               >
                 <div className="aspect-[3/4] w-full">
                   <BlurImage
@@ -90,28 +124,152 @@ export default function BuyView({ showToast }: BuyViewProps) {
                     {artwork.title}
                   </p>
                   <p className="mt-0.5 truncate text-[11px] text-white/45">
-                    {artist.name}
+                    {artist?.name}
                   </p>
-                  <p className="mt-2 text-[10px] uppercase tracking-wide text-white/40">
-                    {item.size}
-                  </p>
-                  <div className="mt-2 flex items-center justify-between gap-2">
+                  <div className="mt-2 flex items-center justify-between">
                     <span className="text-sm font-semibold text-white">
-                      ${item.price}
+                      from ${product.priceFrom}
                     </span>
-                    <button
-                      onClick={() => addToCart(artwork.title)}
-                      className="rounded-full bg-white px-2.5 py-1 text-[11px] font-semibold text-ink transition-transform active:scale-95"
-                    >
-                      Add
-                    </button>
+                    <span className="rounded-full bg-white/10 px-2.5 py-1 text-[10px] font-medium text-white/70">
+                      Canvas
+                    </span>
                   </div>
                 </div>
-              </motion.article>
+              </motion.button>
             );
           })}
         </div>
       </div>
+
+      {/* Purchase-interest sheet */}
+      <AnimatePresence>
+        {activeProduct && activeArtwork && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.3 }}
+              onClick={() => setActiveId(null)}
+              className="absolute inset-0 z-40 bg-black/55"
+            />
+            <motion.div
+              initial={{ y: "100%" }}
+              animate={{ y: 0 }}
+              exit={{ y: "100%" }}
+              transition={{ type: "spring", stiffness: 320, damping: 36 }}
+              className="absolute inset-x-0 bottom-0 z-50 max-h-[88%] overflow-y-auto rounded-t-[28px] border-t border-white/10 bg-ink-soft/95 text-white shadow-placard backdrop-blur-2xl [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+            >
+              <div className="flex flex-col items-center pb-1 pt-3">
+                <div className="h-1.5 w-11 rounded-full bg-white/15" />
+              </div>
+
+              <div className="flex items-start justify-between gap-3 px-6 pt-2">
+                <div className="min-w-0">
+                  <h2 className="truncate font-serif text-xl text-white">
+                    {activeArtwork.title}
+                  </h2>
+                  <p className="mt-1 truncate text-sm text-white/55">
+                    {activeArtist?.name} · Canvas print
+                  </p>
+                </div>
+                <button
+                  onClick={() => setActiveId(null)}
+                  aria-label="Close"
+                  className="-mr-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-white/55 transition-colors hover:bg-white/10 hover:text-white"
+                >
+                  <CloseIcon className="h-4 w-4" />
+                </button>
+              </div>
+
+              <div className="mx-6 mt-4 overflow-hidden rounded-2xl">
+                <div className="aspect-[4/3] w-full">
+                  <BlurImage
+                    src={activeArtwork.image}
+                    alt={activeArtwork.title}
+                    accent={activeArtwork.accent}
+                    fit="contain"
+                  />
+                </div>
+              </div>
+
+              {/* Size selection */}
+              <div className="px-6 pt-5">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-white/45">
+                  Choose a size
+                </p>
+                <div className="mt-3 space-y-2">
+                  {CANVAS_SIZES.map((opt) => {
+                    const selected = size === opt.size;
+                    const price = priceForSize(activeProduct.priceFrom, opt.size);
+                    return (
+                      <button
+                        key={opt.size}
+                        onClick={() => setSize(opt.size)}
+                        className={`flex w-full items-center justify-between rounded-2xl border px-4 py-3 text-left transition-colors ${
+                          selected
+                            ? "border-white/50 bg-white/10"
+                            : "border-white/12 bg-white/[0.03] hover:bg-white/[0.06]"
+                        }`}
+                      >
+                        <div>
+                          <p className="text-sm font-medium text-white">
+                            {opt.size}
+                          </p>
+                          <p className="text-xs text-white/45">{opt.dimensions}</p>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <span className="text-sm font-semibold text-white">
+                            ${price}
+                          </span>
+                          <span
+                            className={`flex h-5 w-5 items-center justify-center rounded-full border ${
+                              selected
+                                ? "border-white bg-white text-ink"
+                                : "border-white/30"
+                            }`}
+                          >
+                            {selected && <CheckIcon className="h-3 w-3" />}
+                          </span>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Buy / interest */}
+              <div className="px-6 pb-8 pt-5">
+                {interested ? (
+                  <div className="rounded-2xl border border-emerald-400/25 bg-emerald-400/10 p-4 text-center">
+                    <p className="font-medium text-emerald-200">
+                      Canvas checkout coming soon
+                    </p>
+                    <p className="mt-1 text-sm text-white/60">
+                      We&apos;ve noted your interest in the {size.toLowerCase()}{" "}
+                      print. You&apos;ll be first to know when ordering opens.
+                    </p>
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => {
+                      setInterested(true);
+                      showToast("Interest registered — checkout coming soon");
+                    }}
+                    className="flex w-full items-center justify-center rounded-full bg-white py-3.5 text-sm font-semibold text-ink transition-transform active:scale-[0.98]"
+                  >
+                    Buy Canvas · $
+                    {priceForSize(activeProduct.priceFrom, size)}
+                  </button>
+                )}
+                <p className="mt-3 text-center text-[11px] text-white/35">
+                  Demo only — no payment is taken and nothing ships in v1.0.
+                </p>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

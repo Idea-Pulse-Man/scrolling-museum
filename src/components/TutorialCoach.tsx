@@ -8,7 +8,14 @@ import { tutorialFooterHintClass } from "./artwork-layout";
 /** Curated hero for the finale — visual-first, drops the user into the gallery. */
 const FINALE_ARTWORK = artworks.find((a) => a.id === "starry-night")!;
 
-type HintKey = "vertical" | "tap" | "swipe-up" | "left" | "right" | "hold";
+type HintKey =
+  | "vertical"
+  | "tap"
+  | "swipe-up"
+  | "left"
+  | "right"
+  | "hold"
+  | "actions";
 
 interface CoachStep {
   label: string;
@@ -54,6 +61,14 @@ const STEPS: CoachStep[] = [
     hint: "hold",
     zone: "center",
     done: "Distraction-free",
+  },
+  {
+    label: "Use quick actions",
+    instruction:
+      "On the right rail you can open the artist's profile, like, save, comment, download, share, and switch Fit / Fill — tap Got it to finish.",
+    hint: "actions",
+    zone: "center",
+    done: "All set",
   },
 ];
 
@@ -261,6 +276,56 @@ function FooterSwipeUpHint() {
   );
 }
 
+const QUICK_ACTIONS = [
+  "Artist profile",
+  "Like",
+  "Save",
+  "Comment",
+  "Download",
+  "Share",
+  "Fit / Fill view",
+];
+
+function ActionsExplainer({ onAdvance }: { onAdvance?: () => void }) {
+  return (
+    <>
+      {/* Arrow + callout pointing at the right-side action rail. */}
+      <div className="pointer-events-none absolute right-4 top-1/2 flex -translate-y-1/2 flex-col items-end gap-3">
+        <motion.div
+          animate={{ x: [0, 8, 0] }}
+          transition={{ duration: 1.4, repeat: Infinity, ease: "easeInOut" }}
+          className="rounded-2xl border border-white/15 bg-black/55 p-3 backdrop-blur-md"
+        >
+          <ol className="space-y-1.5">
+            {QUICK_ACTIONS.map((label, i) => (
+              <li
+                key={label}
+                className="flex items-center gap-2 text-[12px] text-white/80"
+              >
+                <span className="flex h-4 w-4 items-center justify-center rounded-full bg-white/15 text-[9px] font-bold text-white">
+                  {i + 1}
+                </span>
+                {label}
+              </li>
+            ))}
+          </ol>
+        </motion.div>
+      </div>
+
+      {/* Got it CTA in the thumb zone. */}
+      <div className="absolute inset-x-0 bottom-[calc(env(safe-area-inset-bottom)+6rem)] flex justify-center px-8">
+        <motion.button
+          whileTap={{ scale: 0.97 }}
+          onClick={onAdvance}
+          className="pointer-events-auto rounded-full bg-white px-7 py-3.5 text-sm font-semibold text-ink shadow-[0_8px_32px_rgba(0,0,0,0.35)] transition-transform"
+        >
+          Got it
+        </motion.button>
+      </div>
+    </>
+  );
+}
+
 function GestureHint({ hint, footer = false }: { hint: HintKey; footer?: boolean }) {
   if (hint === "left" || hint === "right") {
     return <HorizontalSwipeHint direction={hint} />;
@@ -274,7 +339,13 @@ function GestureHint({ hint, footer = false }: { hint: HintKey; footer?: boolean
     return <FooterSwipeUpHint />;
   }
 
-  const labels: Record<Exclude<HintKey, "left" | "right" | "hold">, string> = {
+  // "actions" is rendered separately by ActionsExplainer, never here.
+  if (hint === "actions") return null;
+
+  const labels: Record<
+    Exclude<HintKey, "left" | "right" | "hold" | "actions">,
+    string
+  > = {
     vertical: "Swipe up / down",
     tap: "Tap",
     "swipe-up": "Swipe up",
@@ -381,10 +452,10 @@ function TutorialFinale({ onStart }: { onStart: () => void }) {
       >
         <div className="mb-6 flex items-center justify-center gap-2">
           <span className="flex h-6 w-6 items-center justify-center rounded-full bg-white text-[12px] font-bold text-ink shadow-lg">
-            S
+            N
           </span>
           <span className="text-[12px] font-semibold uppercase tracking-[0.24em] text-white drop-shadow-md">
-            Museum
+            Narsil
           </span>
         </div>
         <h2 className="font-serif text-[34px] leading-[1.08] tracking-tight text-white drop-shadow-[0_2px_24px_rgba(0,0,0,0.45)]">
@@ -420,6 +491,7 @@ export default function TutorialCoach({
   advancing = false,
   onSkip,
   onStart,
+  onAdvance,
 }: {
   open: boolean;
   /** 0..STEPS.length-1 for gesture steps, STEPS.length for the final card. */
@@ -428,10 +500,13 @@ export default function TutorialCoach({
   advancing?: boolean;
   onSkip: () => void;
   onStart: () => void;
+  /** Advances a non-gesture (informational) step, e.g. the quick-actions step. */
+  onAdvance?: () => void;
 }) {
   const isFinal = step >= STEPS.length;
   const current = STEPS[Math.min(step, STEPS.length - 1)];
   const confirming = advancing && !isFinal;
+  const isActionsStep = !isFinal && current.hint === "actions";
 
   return (
     <AnimatePresence>
@@ -452,7 +527,7 @@ export default function TutorialCoach({
           {!isFinal && (
             <button
               onClick={onSkip}
-              className="pointer-events-auto absolute right-5 top-[calc(env(safe-area-inset-top)+1.25rem)] z-[3] rounded-full border border-white/10 bg-black/30 px-3.5 py-1.5 text-xs font-medium text-white/70 backdrop-blur-md transition-colors hover:text-white"
+              className="pointer-events-auto absolute right-5 top-[calc(env(safe-area-inset-top)+1.25rem)] z-[3] rounded-full border border-white/10 bg-black/30 px-3.5 py-1.5 text-xs font-medium text-emerald-400 backdrop-blur-md transition-colors hover:text-emerald-300"
             >
               Skip
             </button>
@@ -484,8 +559,15 @@ export default function TutorialCoach({
                     </p>
                   </div>
 
+                  {/* The quick-actions step is informational — it points at the
+                      right-side rail and advances via a "Got it" button. */}
+                  {isActionsStep && (
+                    <ActionsExplainer onAdvance={onAdvance} />
+                  )}
+
                   {/* Animated gesture cue over the interaction zone — swapped
                       for a success confirmation during the post-gesture pause. */}
+                  {!isActionsStep && (
                   <div
                     className={`absolute left-1/2 -translate-x-1/2 ${
                       current.zone === "footer"
@@ -531,6 +613,7 @@ export default function TutorialCoach({
                       )}
                     </AnimatePresence>
                   </div>
+                  )}
                 </>
               )}
             </motion.div>

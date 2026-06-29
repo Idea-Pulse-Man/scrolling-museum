@@ -6,7 +6,24 @@ export interface HistoryEra {
   artworkIds: string[];
 }
 
+/** Learning timeline for the History page, oldest → newest. */
 export const historyEras: HistoryEra[] = [
+  {
+    id: "ancient-egypt",
+    title: "Ancient Egypt",
+    years: "3100 – 30 BC",
+    description:
+      "Three thousand years of sculpture, painting, and craft devoted to gods, pharaohs, and the afterlife — defined by order, symmetry, and permanence.",
+    artworkIds: ["nefertiti-bust"],
+  },
+  {
+    id: "classical-antiquity",
+    title: "Greek & Roman Antiquity",
+    years: "800 BC – 400 AD",
+    description:
+      "The classical ideal — balance, proportion, and the human form — from Archaic Greek pottery to the imperial portraiture of Rome.",
+    artworkIds: ["exekias-amphora", "venus-de-milo", "augustus-prima-porta"],
+  },
   {
     id: "renaissance",
     title: "Renaissance",
@@ -39,4 +56,14 @@ export const historyEras: HistoryEra[] = [
       "Color, emotion, and ornament pushed to new extremes — the birth of modern art as we know it.",
     artworkIds: ["starry-night", "the-scream", "birch-forest"],
   },
+];
+
+/** Artists spotlighted on the History page's "Featured artists" rail. */
+export const featuredArtistIds: string[] = [
+  "van-gogh",
+  "hokusai",
+  "da-vinci",
+  "klimt",
+  "vermeer",
+  "munch",
 ];

@@ -1,31 +1,34 @@
 "use client";
 
 import { AnimatePresence, motion } from "framer-motion";
-import { getArtworksByArtist, type Artist } from "@/data";
+import { getArtworksByArtist, getArtistAvatar, type Artist } from "@/data";
 import BlurImage from "./BlurImage";
-import { CloseIcon } from "./Icons";
+import ArtistAvatar from "./ArtistAvatar";
+import { CloseIcon, PlusIcon, CheckIcon } from "./Icons";
+import { useAppState } from "./AppState";
 
 interface ArtistProfileModalProps {
   artist: Artist | null;
   onClose: () => void;
+  onOpenArtwork?: (artworkId: string) => void;
 }
 
-function Stat({ label, value }: { label: string; value: string }) {
-  return (
-    <div>
-      <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-white/45">
-        {label}
-      </p>
-      <p className="mt-1 text-sm text-white/85">{value}</p>
-    </div>
-  );
+/** Compact count formatter — 1240 → "1.2K", 4800000 → "4.8M". */
+function formatCount(n: number): string {
+  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1).replace(/\.0$/, "")}M`;
+  if (n >= 1_000) return `${(n / 1_000).toFixed(1).replace(/\.0$/, "")}K`;
+  return `${n}`;
 }
 
 export default function ArtistProfileModal({
   artist,
   onClose,
+  onOpenArtwork,
 }: ArtistProfileModalProps) {
+  const { isFollowing, toggleFollowing } = useAppState();
   const works = artist ? getArtworksByArtist(artist.id) : [];
+  const isFreelance = artist?.profileType === "freelance";
+  const following = artist ? isFollowing(artist.id) : false;
 
   return (
     <AnimatePresence>
@@ -35,24 +38,31 @@ export default function ArtistProfileModal({
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.25 }}
-          className="absolute inset-0 z-[60] overflow-y-auto bg-ink"
+          className="absolute inset-0 z-[60] overflow-y-auto bg-ink [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
         >
           {/* Hero */}
           <div className="relative h-60 w-full overflow-hidden">
             <div
               className="absolute inset-0"
               style={{
-                background: `radial-gradient(120% 90% at 30% 10%, rgba(255,255,255,0.10), rgba(10,10,11,0.2)), linear-gradient(160deg, #2a2a30, #0a0a0b)`,
+                background: isFreelance
+                  ? `radial-gradient(120% 90% at 30% 10%, ${artist.accent ?? "#7c5cff"}55, rgba(10,10,11,0.2)), linear-gradient(160deg, #1c1c22, #0a0a0b)`
+                  : `radial-gradient(120% 90% at 30% 10%, rgba(255,255,255,0.10), rgba(10,10,11,0.2)), linear-gradient(160deg, #2a2a30, #0a0a0b)`,
               }}
             />
             <div className="absolute inset-0 flex items-end p-6">
               <div className="flex items-end gap-4">
-                <div className="flex h-20 w-20 items-center justify-center rounded-full border border-white/15 bg-white/10 font-serif text-2xl text-white shadow-rail backdrop-blur-md">
-                  {artist.initials}
-                </div>
+                <ArtistAvatar
+                  src={getArtistAvatar(artist.id)}
+                  initials={artist.initials}
+                  className="h-20 w-20 rounded-full border border-white/15 font-serif text-2xl shadow-rail backdrop-blur-md"
+                  fallbackClassName={
+                    isFreelance ? "text-white" : "bg-white/10 text-white"
+                  }
+                />
                 <div className="pb-1">
                   <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-white/55">
-                    Artist
+                    {isFreelance ? "Freelance Artist" : "Artist"}
                   </p>
                   <h2 className="mt-1 font-serif text-3xl leading-none text-white">
                     {artist.name}
@@ -75,8 +85,33 @@ export default function ArtistProfileModal({
           </div>
 
           {/* Body */}
-          <div className="px-6 pb-12">
-            <div className="grid grid-cols-2 gap-x-4 gap-y-5 border-b border-white/10 py-6">
+          <div className="px-6 pb-[calc(env(safe-area-inset-bottom)+6.5rem)]">
+            {/* Social stats + follow */}
+            <div className="mt-5 flex items-center gap-5">
+              <StatInline label="Followers" value={formatCount(artist.followers)} />
+              <StatInline label="Likes" value={formatCount(artist.likes)} />
+              <StatInline label="Saves" value={formatCount(artist.saves)} />
+              <button
+                onClick={() => toggleFollowing(artist.id)}
+                className={`ml-auto flex items-center gap-1.5 rounded-full px-4 py-2 text-sm font-semibold transition-colors ${
+                  following
+                    ? "border border-white/20 bg-white/5 text-white"
+                    : "bg-white text-ink"
+                }`}
+              >
+                {following ? (
+                  <>
+                    <CheckIcon className="h-4 w-4" /> Following
+                  </>
+                ) : (
+                  <>
+                    <PlusIcon className="h-3.5 w-3.5" /> Follow
+                  </>
+                )}
+              </button>
+            </div>
+
+            <div className="mt-6 grid grid-cols-2 gap-x-4 gap-y-5 border-y border-white/10 py-6">
               <Stat label="Period" value={artist.period} />
               <Stat label="Style" value={artist.style} />
               <div className="col-span-2">
@@ -85,14 +120,16 @@ export default function ArtistProfileModal({
             </div>
 
             <h3 className="mt-6 text-[11px] font-semibold uppercase tracking-[0.16em] text-white/45">
-              Biography
+              {isFreelance ? "About" : "Biography"}
             </h3>
             <p className="mt-2 text-[15px] leading-relaxed text-white/75">
               {artist.bio}
             </p>
 
             <div className="mt-8 flex items-baseline justify-between">
-              <h3 className="font-serif text-xl text-white">Works in collection</h3>
+              <h3 className="font-serif text-xl text-white">
+                {isFreelance ? "Posts" : "Works in collection"}
+              </h3>
               <span className="text-xs text-white/45">
                 {works.length} {works.length === 1 ? "piece" : "pieces"}
               </span>
@@ -100,9 +137,10 @@ export default function ArtistProfileModal({
 
             <div className="mt-4 grid grid-cols-2 gap-3">
               {works.map((work) => (
-                <div
+                <button
                   key={work.id}
-                  className="group overflow-hidden rounded-2xl border border-white/10 bg-white/[0.03]"
+                  onClick={() => onOpenArtwork?.(work.id)}
+                  className="group overflow-hidden rounded-2xl border border-white/10 bg-white/[0.03] text-left"
                 >
                   <div className="aspect-[3/4] w-full">
                     <BlurImage
@@ -120,12 +158,34 @@ export default function ArtistProfileModal({
                       {work.year} · {work.medium}
                     </p>
                   </div>
-                </div>
+                </button>
               ))}
             </div>
           </div>
         </motion.div>
       )}
     </AnimatePresence>
+  );
+}
+
+function Stat({ label, value }: { label: string; value: string }) {
+  return (
+    <div>
+      <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-white/45">
+        {label}
+      </p>
+      <p className="mt-1 text-sm text-white/85">{value}</p>
+    </div>
+  );
+}
+
+function StatInline({ label, value }: { label: string; value: string }) {
+  return (
+    <div>
+      <p className="font-serif text-lg leading-none text-white">{value}</p>
+      <p className="mt-1 text-[10px] uppercase tracking-[0.12em] text-white/45">
+        {label}
+      </p>
+    </div>
   );
 }

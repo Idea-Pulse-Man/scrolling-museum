@@ -1,24 +1,28 @@
 import type { Metadata, Viewport } from "next";
 import { Inter, Playfair_Display } from "next/font/google";
-import { artworks } from "@/data";
+import { feedArtworks } from "@/data";
 import "./globals.css";
 
 const sans = Inter({
   subsets: ["latin"],
   variable: "--font-sans",
   display: "swap",
+  fallback: ["system-ui", "Segoe UI", "Arial", "sans-serif"],
+  adjustFontFallback: true,
 });
 
 const serif = Playfair_Display({
   subsets: ["latin"],
   variable: "--font-serif",
   display: "swap",
+  fallback: ["Georgia", "Times New Roman", "serif"],
+  adjustFontFallback: true,
 });
 
 export const metadata: Metadata = {
-  title: "Scrolling Museum",
+  title: "Narsil — Discover Art",
   description:
-    "An endless, beautiful feed of public-domain art. Browse, discover, and learn the history behind every masterpiece.",
+    "Narsil is a beautiful mobile-first art discovery app. Scroll an endless feed of public-domain masterpieces and freelance originals, learn the history, follow artists, and save what you love.",
 };
 
 export const viewport: Viewport = {
@@ -42,8 +46,8 @@ export default function RootLayout({
         <link rel="preconnect" href="https://upload.wikimedia.org" crossOrigin="anonymous" />
         <link rel="preconnect" href="https://commons.wikimedia.org" />
         <link rel="dns-prefetch" href="https://upload.wikimedia.org" />
-        {/* Preload the first artwork so it starts downloading before hydration. */}
-        <link rel="preload" as="image" href={artworks[0].image} fetchPriority="high" />
+        {/* Preload the first feed artwork so it starts downloading before hydration. */}
+        <link rel="preload" as="image" href={feedArtworks[0].image} fetchPriority="high" />
       </head>
       <body className="font-sans antialiased">{children}</body>
     </html>

@@ -6,7 +6,13 @@
  * MobileShell state machine, which advances the coach overlay. It is mock-only
  * with no persistence — refreshing the page restarts it.
  */
-export type TutorialAction = "scroll" | "placard" | "artist" | "fit" | "clean";
+export type TutorialAction =
+  | "scroll"
+  | "placard"
+  | "artist"
+  | "fit"
+  | "clean"
+  | "actions";
 
 export interface TutorialBridge {
   /** Whether the tutorial is currently running. */

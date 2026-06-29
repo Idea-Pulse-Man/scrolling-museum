@@ -3,7 +3,9 @@
 import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import type { Artwork, Artist } from "@/data";
+import { originLabel, getArtistAvatar } from "@/data";
 import BlurImage from "./BlurImage";
+import ArtistAvatar from "./ArtistAvatar";
 import ActionRail from "./ActionRail";
 import HistoryPlacard from "./HistoryPlacard";
 import ArtDiscussion from "./ArtDiscussion";
@@ -83,6 +85,7 @@ export default function ArtworkCard({
 
   const scrollTutorial = !!tutorial?.active && tutorial.allow === "scroll";
   const placardTutorial = !!tutorial?.active && tutorial.allow === "placard";
+  const actionsTutorial = !!tutorial?.active && tutorial.allow === "actions";
   const footerInteractive = !tutorial?.active || placardTutorial;
   const blockArtworkGestures = scrollTutorial || placardTutorial;
 
@@ -231,8 +234,15 @@ export default function ArtworkCard({
             <div className={tutorial?.active ? "pointer-events-none" : undefined}>
               <ActionRail
                 artist={artist}
+                artworkId={artwork.id}
+                artworkTitle={artwork.title}
+                artworkOrigin={artwork.origin}
+                onOpenArtist={() => onOpenArtist(artist.id)}
                 onOpenComments={() => setDiscussionOpen(true)}
                 showToast={showToast}
+                fit={fit}
+                onToggleFit={toggleFit}
+                highlight={actionsTutorial}
               />
             </div>
 
@@ -250,8 +260,14 @@ export default function ArtworkCard({
             >
               <div className="pointer-events-none max-w-[78%]">
                 <div className="mb-2.5 flex flex-wrap items-center gap-2">
-                  <span className="rounded-full border border-emerald-300/30 bg-emerald-400/15 px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-emerald-200">
-                    Public Domain
+                  <span
+                    className={`rounded-full border px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.12em] ${
+                      artwork.origin === "artist-original"
+                        ? "border-sky-300/30 bg-sky-400/15 text-sky-200"
+                        : "border-emerald-300/30 bg-emerald-400/15 text-emerald-200"
+                    }`}
+                  >
+                    {originLabel(artwork.origin)}
                   </span>
                   <span className="rounded-full border border-white/15 bg-white/10 px-2.5 py-0.5 text-[10px] font-medium tracking-wide text-white/80 backdrop-blur-md">
                     {artwork.source}
@@ -270,9 +286,12 @@ export default function ArtworkCard({
                   }}
                   className="pointer-events-auto mt-1.5 inline-flex items-center gap-2 text-[15px] text-white/85 transition-colors hover:text-white"
                 >
-                  <span className="flex h-6 w-6 items-center justify-center rounded-full bg-white/15 text-[10px] font-semibold backdrop-blur-md">
-                    {artist.initials}
-                  </span>
+                  <ArtistAvatar
+                    src={getArtistAvatar(artist.id)}
+                    initials={artist.initials}
+                    className="h-6 w-6 rounded-full text-[10px] font-semibold backdrop-blur-md"
+                    fallbackClassName="bg-white/15 text-white"
+                  />
                   <span className="underline-offset-4 hover:underline">
                     {artist.name}
                   </span>

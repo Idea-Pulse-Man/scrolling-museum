@@ -2,48 +2,56 @@
 
 import { useState } from "react";
 import { motion } from "framer-motion";
+import { categories, type CategoryId, type ArtworkOrigin } from "@/data";
+import { screenScrollClass, screenContentClass } from "./artwork-layout";
 import type { ToastState } from "./Toast";
 
 interface CreateViewProps {
   showToast: (message: string, variant?: ToastState["variant"]) => void;
 }
 
+/**
+ * v1 artist posting flow — local/mock only (nothing is uploaded or persisted).
+ * FUTURE (v1.1 / v2): real image upload to storage, moderation/review queue,
+ * and rich media posts (video + music) — intentionally out of scope for v1.0.
+ */
+const ORIGIN_OPTIONS: { value: ArtworkOrigin; label: string }[] = [
+  { value: "artist-original", label: "Original" },
+  { value: "public-domain", label: "Public Domain" },
+  { value: "fan-study", label: "Fan Study" },
+];
+
 export default function CreateView({ showToast }: CreateViewProps) {
   const [title, setTitle] = useState("");
-  const [artist, setArtist] = useState("");
-  const [medium, setMedium] = useState("");
   const [description, setDescription] = useState("");
-  const [tags, setTags] = useState("");
+  const [category, setCategory] = useState<CategoryId>("paintings");
+  const [origin, setOrigin] = useState<ArtworkOrigin>("artist-original");
   const [hasImage, setHasImage] = useState(false);
 
-  const canPublish =
-    title.trim().length > 0 &&
-    artist.trim().length > 0 &&
-    description.trim().length > 0;
+  const canPublish = title.trim().length > 0 && description.trim().length > 0;
 
   const handlePublish = () => {
     if (!canPublish) return;
-    showToast("Artwork submitted for review");
+    showToast("Post submitted (demo)");
     setTitle("");
-    setArtist("");
-    setMedium("");
     setDescription("");
-    setTags("");
+    setCategory("paintings");
+    setOrigin("artist-original");
     setHasImage(false);
   };
 
   return (
-    <div className="h-full overflow-y-auto overscroll-contain scroll-smooth [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-      <div className="px-5 pb-10 pt-[calc(env(safe-area-inset-top)+6.5rem)]">
+    <div className={screenScrollClass}>
+      <div className={screenContentClass}>
         <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-white/45">
           Contribute
         </p>
         <h1 className="mt-2 font-serif text-[28px] leading-tight text-white">
           Create
         </h1>
-        <p className="mt-2 max-w-[90%] text-[15px] leading-relaxed text-white/60">
-          Share public-domain works or your own curation with the museum
-          community.
+        <p className="mt-2 max-w-[92%] text-[15px] leading-relaxed text-white/60">
+          Post your own artwork to Narsil. Freelance creators can share originals,
+          studies, and curated public-domain finds.
         </p>
 
         <motion.button
@@ -79,25 +87,7 @@ export default function CreateView({ showToast }: CreateViewProps) {
             <input
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              placeholder="The Starry Night"
-              className="field-input"
-            />
-          </Field>
-
-          <Field label="Artist">
-            <input
-              value={artist}
-              onChange={(e) => setArtist(e.target.value)}
-              placeholder="Vincent van Gogh"
-              className="field-input"
-            />
-          </Field>
-
-          <Field label="Medium">
-            <input
-              value={medium}
-              onChange={(e) => setMedium(e.target.value)}
-              placeholder="Oil on canvas"
+              placeholder="Concentric Hours"
               className="field-input"
             />
           </Field>
@@ -112,14 +102,41 @@ export default function CreateView({ showToast }: CreateViewProps) {
             />
           </Field>
 
-          <Field label="Tags">
-            <input
-              value={tags}
-              onChange={(e) => setTags(e.target.value)}
-              placeholder="Landscape, Post-Impressionism"
-              className="field-input"
-            />
+          <Field label="Category">
+            <select
+              value={category}
+              onChange={(e) => setCategory(e.target.value as CategoryId)}
+              className="field-input appearance-none"
+            >
+              {categories.map((c) => (
+                <option key={c.id} value={c.id} className="bg-ink-soft text-white">
+                  {c.label}
+                </option>
+              ))}
+            </select>
           </Field>
+
+          <div>
+            <span className="text-[10px] font-semibold uppercase tracking-[0.16em] text-white/45">
+              Type
+            </span>
+            <div className="mt-2 flex gap-2">
+              {ORIGIN_OPTIONS.map((opt) => (
+                <button
+                  key={opt.value}
+                  type="button"
+                  onClick={() => setOrigin(opt.value)}
+                  className={`flex-1 rounded-full px-3 py-2 text-xs font-medium transition-colors ${
+                    origin === opt.value
+                      ? "bg-white text-ink"
+                      : "border border-white/15 bg-white/5 text-white/70 hover:text-white"
+                  }`}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+          </div>
 
           <motion.button
             type="submit"
@@ -127,9 +144,14 @@ export default function CreateView({ showToast }: CreateViewProps) {
             whileTap={canPublish ? { scale: 0.98 } : undefined}
             className="mt-2 flex w-full items-center justify-center rounded-full bg-white py-3.5 text-sm font-semibold text-ink transition-opacity disabled:cursor-not-allowed disabled:opacity-40"
           >
-            Publish to feed
+            Post to Narsil
           </motion.button>
         </form>
+
+        <p className="mt-5 text-center text-[11px] leading-relaxed text-white/30">
+          Demo only — posts aren&apos;t uploaded or saved. Video &amp; music
+          posting are planned for a future release.
+        </p>
       </div>
     </div>
   );

@@ -1,8 +1,8 @@
 {
-  "name": "scrolling-museum",
+  "name": "narsil",
   "version": "1.0.0",
   "private": true,
-  "description": "Scrolling Museum — an interactive mobile MVP prototype for endless public-domain art discovery.",
+  "description": "Narsil — a mobile-first art discovery app for public-domain masterpieces and freelance originals.",
   "scripts": {
     "dev": "next dev",
     "build": "next build",

@@ -1,15 +1,21 @@
 "use client";
 
 import { useCallback, useRef } from "react";
-import { artworks, getArtist } from "@/data";
+import { feedArtworks, getArtist } from "@/data";
 import ArtworkCard from "./ArtworkCard";
 import type { ToastState } from "./Toast";
 import type { TutorialBridge } from "./tutorial";
+
+export type FeedFilter = "all" | "museum" | "freelance";
 
 interface ArtFeedProps {
   showToast: (message: string, variant?: ToastState["variant"]) => void;
   onOpenArtist: (artistId: string) => void;
   onCleanChange: (clean: boolean) => void;
+  /** Reports the index of the visible artwork in the full `feedArtworks` array. */
+  onViewIndex?: (index: number) => void;
+  /** Source toggle: mixed (all), museum (public-domain) or freelance originals. */
+  filter?: FeedFilter;
   tutorial?: TutorialBridge;
 }
 
@@ -17,10 +23,19 @@ export default function ArtFeed({
   showToast,
   onOpenArtist,
   onCleanChange,
+  onViewIndex,
+  filter = "all",
   tutorial,
 }: ArtFeedProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const lastScrollTop = useRef(0);
+  const lastIndex = useRef(0);
+
+  const items = feedArtworks.filter((art) => {
+    if (filter === "museum") return art.origin !== "artist-original";
+    if (filter === "freelance") return art.origin === "artist-original";
+    return true;
+  });
 
   // Lock vertical scrolling except on the step that teaches it, so the user
   // stays on the artwork while learning the other gestures.
@@ -28,16 +43,28 @@ export default function ArtFeed({
   const scrollStep = !!tutorial?.active && tutorial.allow === "scroll";
 
   const handleScroll = useCallback(() => {
-    if (!scrollStep) return;
     const el = scrollRef.current;
     if (!el) return;
 
+    // Report the snapped index into the full feedArtworks array (not the filtered
+    // list) so MobileShell's preference-modal trigger stays correct when the
+    // Museum / Freelance toggle is active.
+    const filteredIndex = Math.round(el.scrollTop / el.clientHeight);
+    if (filteredIndex !== lastIndex.current) {
+      lastIndex.current = filteredIndex;
+      const artwork = items[filteredIndex];
+      if (artwork) {
+        const fullIndex = feedArtworks.findIndex((a) => a.id === artwork.id);
+        if (fullIndex >= 0) onViewIndex?.(fullIndex);
+      }
+    }
+
+    if (!scrollStep) return;
     const delta = Math.abs(el.scrollTop - lastScrollTop.current);
     if (delta < 24) return;
-
     lastScrollTop.current = el.scrollTop;
     tutorial?.report("scroll");
-  }, [scrollStep, tutorial]);
+  }, [scrollStep, tutorial, onViewIndex, items]);
 
   return (
     <div
@@ -47,7 +74,7 @@ export default function ArtFeed({
         lockScroll ? "overflow-hidden" : "overflow-y-scroll"
       }`}
     >
-      {artworks.map((artwork, index) => {
+      {items.map((artwork, index) => {
         const artist = getArtist(artwork.artistId)!;
         return (
           <ArtworkCard
