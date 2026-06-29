@@ -147,34 +147,34 @@ export const artists: Artist[] = [
 
   // ── Ancient / anonymous attributions ────────────────────────────────
   {
-    id: "alexandros-antioch",
-    name: "Alexandros of Antioch",
-    initials: "AA",
+    id: "pythokritos",
+    name: "Pythokritos of Rhodes",
+    initials: "PR",
     profileType: "historical",
-    lifespan: "c. 150 – 125 BC",
+    lifespan: "fl. c. 200 – 150 BC",
     nationality: "Hellenistic Greek",
     period: "Hellenistic Greece",
-    style: "Classical Sculpture",
-    knownFor: "The Venus de Milo, an icon of Hellenistic beauty",
-    bio: "A sculptor of the Hellenistic age, known to history through an inscription once attached to the base of the Venus de Milo. His Aphrodite balances classical restraint with the spiralling movement of late Greek sculpture.",
-    followers: 220000,
-    likes: 540000,
-    saves: 210000,
+    style: "Hellenistic Sculpture",
+    knownFor: "The Winged Victory of Samothrace",
+    bio: "A Rhodian sculptor of the Hellenistic age, often credited with the Winged Victory of Samothrace. His Nike alights on a ship's prow mid-motion, her wind-swept drapery making her one of the supreme achievements of Greek sculpture.",
+    followers: 240000,
+    likes: 560000,
+    saves: 220000,
   },
   {
-    id: "thutmose",
-    name: "Thutmose",
-    initials: "TH",
+    id: "egyptian-royal-workshop",
+    name: "Royal Workshop of Thebes",
+    initials: "RT",
     profileType: "historical",
-    lifespan: "fl. c. 1350 BC",
+    lifespan: "fl. c. 1323 BC",
     nationality: "Ancient Egyptian",
-    period: "Amarna Period",
-    style: "New Kingdom Sculpture",
-    knownFor: "The painted bust of Queen Nefertiti",
-    bio: "Court sculptor to Pharaoh Akhenaten, Thutmose led a workshop at Amarna where the celebrated bust of Nefertiti was found. His work marks the naturalistic refinement of the Amarna style.",
-    followers: 260000,
-    likes: 720000,
-    saves: 280000,
+    period: "New Kingdom",
+    style: "Funerary Goldwork",
+    knownFor: "The golden funerary mask of Tutankhamun",
+    bio: "The anonymous royal goldsmiths of Egypt's 18th Dynasty created the funerary treasures of the pharaohs. Their masterwork — the death mask of the boy-king Tutankhamun — fuses gold, lapis lazuli, and coloured glass into the most famous image of ancient Egypt.",
+    followers: 300000,
+    likes: 880000,
+    saves: 340000,
   },
   {
     id: "exekias",
@@ -192,19 +192,19 @@ export const artists: Artist[] = [
     saves: 150000,
   },
   {
-    id: "roman-workshop",
-    name: "Imperial Roman Workshop",
-    initials: "RW",
+    id: "etruscan-workshop",
+    name: "Etruscan Bronze Workshop",
+    initials: "EB",
     profileType: "historical",
-    lifespan: "1st century AD",
-    nationality: "Ancient Roman",
-    period: "Roman Empire",
-    style: "Imperial Roman Sculpture",
-    knownFor: "State portraiture of the early emperors",
-    bio: "An anonymous imperial workshop producing official portraiture for the Roman state. The Augustus of Prima Porta fuses idealised Greek proportion with Roman political messaging.",
-    followers: 120000,
-    likes: 300000,
-    saves: 110000,
+    lifespan: "5th century BC",
+    nationality: "Etruscan · Roman",
+    period: "Roman Republic",
+    style: "Bronze Sculpture",
+    knownFor: "The Capitoline Wolf, emblem of Rome",
+    bio: "An anonymous workshop in the Etruscan-Roman tradition cast the Capitoline Wolf, the bronze she-wolf who suckles the twins Romulus and Remus. It became — and remains — the enduring emblem of the city of Rome.",
+    followers: 130000,
+    likes: 320000,
+    saves: 120000,
   },
 
   // ── Sample freelance creators (future posting feature) ──────────────
@@ -241,6 +241,20 @@ export const artists: Artist[] = [
     accent: "#2f9e74",
   },
 ];
+
+/**
+ * Portraits are served locally from `public/img/artists/<id>.jpg` (downloaded
+ * from the Wikimedia sources above) so avatars load instantly instead of waiting
+ * on Wikimedia's slow thumbnailer. Only the remote (Wikimedia) portrait URLs are
+ * rewritten — avatars that already point at a local path (e.g. an anonymous
+ * sculptor represented by their artwork) are left untouched. Artists without any
+ * avatar keep their initials.
+ */
+for (const artist of artists) {
+  if (artist.avatar && artist.avatar.startsWith("http")) {
+    artist.avatar = `/img/artists/${artist.id}.jpg`;
+  }
+}
 
 export const artistMap: Record<string, Artist> = Object.fromEntries(
   artists.map((a) => [a.id, a])

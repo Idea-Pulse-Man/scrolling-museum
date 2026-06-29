@@ -153,52 +153,52 @@ export const artworks: Artwork[] = [
 
   // ── Ancient sculpture & pottery ─────────────────────────────────────
   {
-    id: "venus-de-milo",
-    title: "Venus de Milo",
-    artistId: "alexandros-antioch",
-    year: "c. 130 – 100 BC",
+    id: "winged-victory",
+    title: "Winged Victory of Samothrace",
+    artistId: "pythokritos",
+    year: "c. 190 BC",
     period: "Hellenistic Greece",
     medium: "Parian marble",
     source: "Musée du Louvre, Paris",
-    image: wm("Venus de Milo Louvre Ma399 n4.jpg"),
+    image: wm("Nike of Samothrake Louvre Ma2369 n4.jpg"),
     accent: "#3a352c",
     description:
-      "One of the most famous works of ancient Greek sculpture, this marble Aphrodite captures the goddess in a gentle spiral of motion. The lost arms have only deepened its mystery, while the soft modelling of drapery and skin embodies the grace of the Hellenistic age.",
+      "The goddess Nike descends onto the prow of a warship, wings sweeping back and drapery pressed against her by the sea wind. Carved in Parian marble around 190 BC, this Hellenistic masterpiece captures motion and triumph with breathtaking energy — even without its head or arms.",
     tags: ["Hellenistic", "Sculpture", "Marble", "Mythology"],
     category: "sculptures",
     origin: "public-domain",
     empire: "Greek",
   },
   {
-    id: "nefertiti-bust",
-    title: "Bust of Nefertiti",
-    artistId: "thutmose",
-    year: "c. 1345 BC",
-    period: "Amarna Period",
-    medium: "Limestone and stucco",
-    source: "Neues Museum, Berlin",
-    image: wm("Nofretete Neues Museum.jpg"),
-    accent: "#2f3a44",
+    id: "tutankhamun-mask",
+    title: "Mask of Tutankhamun",
+    artistId: "egyptian-royal-workshop",
+    year: "c. 1323 BC",
+    period: "New Kingdom",
+    medium: "Gold, lapis lazuli & glass",
+    source: "Egyptian Museum, Cairo",
+    image: wm("CairoEgMuseumTaaMaskMostlyPhotographed.jpg"),
+    accent: "#4a3a12",
     description:
-      "The painted limestone bust of Queen Nefertiti is a masterpiece of ancient Egyptian art, prized for its serene symmetry and lifelike colour. Found in the workshop of the sculptor Thutmose at Amarna, it remains an enduring symbol of feminine beauty and royal power.",
-    tags: ["Ancient Egypt", "Sculpture", "Portrait", "Amarna"],
+      "The golden funerary mask of the boy-king Tutankhamun is the most famous artifact of ancient Egypt. Wrought from over ten kilograms of gold and inlaid with lapis lazuli, carnelian, and coloured glass, it covered the face of the pharaoh's mummy and remains a dazzling emblem of New Kingdom craftsmanship.",
+    tags: ["Ancient Egypt", "Sculpture", "Gold", "Funerary"],
     category: "sculptures",
     origin: "public-domain",
     empire: "Egyptian",
   },
   {
-    id: "augustus-prima-porta",
-    title: "Augustus of Prima Porta",
-    artistId: "roman-workshop",
-    year: "1st century AD",
-    period: "Roman Empire",
-    medium: "White marble",
-    source: "Vatican Museums, Rome",
-    image: wm("Statue-Augustus.jpg"),
-    accent: "#3b3a36",
+    id: "capitoline-wolf",
+    title: "Capitoline Wolf",
+    artistId: "etruscan-workshop",
+    year: "5th c. BC · twins added c. 1471",
+    period: "Roman",
+    medium: "Bronze",
+    source: "Capitoline Museums, Rome",
+    image: wm("Capitoline she-wolf Musei Capitolini MC1181.jpg"),
+    accent: "#3a2a1c",
     description:
-      "A full-length marble portrait of Rome's first emperor, idealised as a youthful commander addressing his troops. The breastplate's reliefs broadcast imperial propaganda, while the Greek-inspired contrapposto pose fuses political power with classical beauty.",
-    tags: ["Roman", "Sculpture", "Marble", "Imperial"],
+      "The bronze she-wolf suckling the infant twins Romulus and Remus is the enduring emblem of Rome's foundation myth. The wolf is traditionally dated to the Etruscan era, while the suckling twins were added during the Renaissance — a single icon spanning two thousand years of Roman identity.",
+    tags: ["Roman", "Sculpture", "Bronze", "Mythology"],
     category: "sculptures",
     origin: "public-domain",
     empire: "Roman",
@@ -275,6 +275,16 @@ export const artworks: Artwork[] = [
     origin: "artist-original",
   },
 ];
+
+/**
+ * Serve imagery locally from `public/img/artworks/<id>.jpg` (downloaded from the
+ * Wikimedia sources noted above). Wikimedia's on-demand thumbnailer was slow and
+ * unreliable over the network, so the feed now loads instantly from the app's
+ * own origin. Swap these for real uploads when the Create flow gets storage.
+ */
+for (const artwork of artworks) {
+  artwork.image = `/img/artworks/${artwork.id}.jpg`;
+}
 
 export const artworkMap: Record<string, Artwork> = Object.fromEntries(
   artworks.map((a) => [a.id, a])

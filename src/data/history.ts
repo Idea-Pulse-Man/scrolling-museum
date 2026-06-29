@@ -14,15 +14,15 @@ export const historyEras: HistoryEra[] = [
     years: "3100 – 30 BC",
     description:
       "Three thousand years of sculpture, painting, and craft devoted to gods, pharaohs, and the afterlife — defined by order, symmetry, and permanence.",
-    artworkIds: ["nefertiti-bust"],
+    artworkIds: ["tutankhamun-mask"],
   },
   {
     id: "classical-antiquity",
     title: "Greek & Roman Antiquity",
     years: "800 BC – 400 AD",
     description:
-      "The classical ideal — balance, proportion, and the human form — from Archaic Greek pottery to the imperial portraiture of Rome.",
-    artworkIds: ["exekias-amphora", "venus-de-milo", "augustus-prima-porta"],
+      "The classical ideal — balance, proportion, and the human form — from Archaic Greek pottery and Hellenistic marble to the bronze emblems of Rome.",
+    artworkIds: ["exekias-amphora", "winged-victory", "capitoline-wolf"],
   },
   {
     id: "renaissance",
