@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { AnimatePresence, motion } from "framer-motion";
 import {
   artists,
   categoryMap,
@@ -9,7 +10,7 @@ import {
   type CategoryId,
 } from "@/data";
 import { screenScrollClass, screenContentClass } from "./artwork-layout";
-import { SearchIcon, CloseIcon } from "./Icons";
+import { SearchIcon, CloseIcon, ChevronDownIcon } from "./Icons";
 import ArtworkTile from "./ArtworkTile";
 
 interface SearchViewProps {
@@ -31,6 +32,8 @@ export default function SearchView({
 }: SearchViewProps) {
   const [text, setText] = useState("");
   const [filter, setFilter] = useState<Filter | null>(null);
+  // Filters live in a collapsible dropdown so the art results stay visible.
+  const [filtersOpen, setFiltersOpen] = useState(false);
 
   // When arriving from a Discover category card, pre-apply that filter.
   useEffect(() => {
@@ -59,10 +62,13 @@ export default function SearchView({
   const isActive = (kind: FilterKind, value: string) =>
     filter?.kind === kind && filter.value === value;
 
-  const apply = (f: Filter) =>
+  const apply = (f: Filter) => {
     setFilter((prev) =>
       prev && prev.kind === f.kind && prev.value === f.value ? null : f
     );
+    // Collapse back out of the way once a choice is made.
+    setFiltersOpen(false);
+  };
 
   return (
     <div className={screenScrollClass}>
@@ -94,56 +100,102 @@ export default function SearchView({
           )}
         </div>
 
-        {/* Filter facets */}
-        <FacetRow title="Category">
-          {searchFacets.categories.map((id) => (
-            <Chip
-              key={id}
-              active={isActive("category", id)}
-              onClick={() =>
-                apply({ kind: "category", value: id, label: categoryMap[id].label })
-              }
+        {/* Collapsible filter dropdown — keeps the art results visible up top */}
+        <div className="mt-4">
+          <button
+            onClick={() => setFiltersOpen((o) => !o)}
+            aria-expanded={filtersOpen}
+            className={`flex w-full items-center justify-between rounded-full border px-4 py-3 text-sm transition-colors ${
+              filter || filtersOpen
+                ? "border-white/25 bg-white/[0.08] text-white"
+                : "border-white/12 bg-white/[0.04] text-white/80 hover:text-white"
+            }`}
+          >
+            <span className="flex min-w-0 items-center gap-2">
+              <span className="shrink-0 text-white/45">Filter</span>
+              <span className="truncate font-medium">
+                {filter ? filter.label : "All categories"}
+              </span>
+            </span>
+            <motion.span
+              animate={{ rotate: filtersOpen ? 180 : 0 }}
+              transition={{ duration: 0.2 }}
+              className="ml-2 shrink-0 text-white/55"
             >
-              {categoryMap[id].label}
-            </Chip>
-          ))}
-        </FacetRow>
+              <ChevronDownIcon className="h-4 w-4" />
+            </motion.span>
+          </button>
 
-        <FacetRow title="Period">
-          {searchFacets.periods.map((p) => (
-            <Chip
-              key={p}
-              active={isActive("period", p)}
-              onClick={() => apply({ kind: "period", value: p, label: p })}
-            >
-              {p}
-            </Chip>
-          ))}
-        </FacetRow>
+          <AnimatePresence initial={false}>
+            {filtersOpen && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: "auto" }}
+                exit={{ opacity: 0, height: 0 }}
+                transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
+                className="overflow-hidden"
+              >
+                <div className="mt-2 rounded-2xl border border-white/10 bg-white/[0.04] px-4 pb-4">
+                  <FacetRow title="Category">
+                    {searchFacets.categories.map((id) => (
+                      <Chip
+                        key={id}
+                        active={isActive("category", id)}
+                        onClick={() =>
+                          apply({
+                            kind: "category",
+                            value: id,
+                            label: categoryMap[id].label,
+                          })
+                        }
+                      >
+                        {categoryMap[id].label}
+                      </Chip>
+                    ))}
+                  </FacetRow>
 
-        <FacetRow title="Empire">
-          {searchFacets.empires.map((e) => (
-            <Chip
-              key={e}
-              active={isActive("empire", e)}
-              onClick={() => apply({ kind: "empire", value: e, label: e })}
-            >
-              {e}
-            </Chip>
-          ))}
-        </FacetRow>
+                  <FacetRow title="Period">
+                    {searchFacets.periods.map((p) => (
+                      <Chip
+                        key={p}
+                        active={isActive("period", p)}
+                        onClick={() => apply({ kind: "period", value: p, label: p })}
+                      >
+                        {p}
+                      </Chip>
+                    ))}
+                  </FacetRow>
 
-        <FacetRow title="Artist">
-          {artists.map((a) => (
-            <Chip
-              key={a.id}
-              active={isActive("artist", a.id)}
-              onClick={() => apply({ kind: "artist", value: a.id, label: a.name })}
-            >
-              {a.name}
-            </Chip>
-          ))}
-        </FacetRow>
+                  <FacetRow title="Empire">
+                    {searchFacets.empires.map((e) => (
+                      <Chip
+                        key={e}
+                        active={isActive("empire", e)}
+                        onClick={() => apply({ kind: "empire", value: e, label: e })}
+                      >
+                        {e}
+                      </Chip>
+                    ))}
+                  </FacetRow>
+
+                  <FacetRow title="Artist">
+                    {artists.map((a) => (
+                      <Chip
+                        key={a.id}
+                        active={isActive("artist", a.id)}
+                        onClick={() =>
+                          apply({ kind: "artist", value: a.id, label: a.name })
+                        }
+                      >
+                        {a.name}
+                      </Chip>
+                    ))}
+                  </FacetRow>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
 
         {/* Results */}
         <div className="mt-7 flex items-baseline justify-between">

@@ -38,7 +38,7 @@ export default function HistoryPlacard({
             dragConstraints={{ top: 0, bottom: 0 }}
             dragElastic={{ top: 0, bottom: 0.4 }}
             onDragEnd={(_, info) => {
-              if (info.offset.y > 120 || info.velocity.y > 500) onClose();
+              if (info.offset.y > 80 || info.velocity.y > 400) onClose();
             }}
             className="absolute inset-x-0 bottom-0 z-50 max-h-[82%] overflow-y-auto rounded-t-[28px] border-t border-white/15 bg-canvas/95 text-ink shadow-placard backdrop-blur-2xl"
           >

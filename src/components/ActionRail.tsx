@@ -9,8 +9,7 @@ import {
   DownloadIcon,
   CommentIcon,
   ShareIcon,
-  MaximizeIcon,
-  MinimizeIcon,
+  EyeOffIcon,
   BookmarkIcon,
 } from "./Icons";
 import { useAppState } from "./AppState";
@@ -25,10 +24,8 @@ interface ActionRailProps {
   onOpenArtist: () => void;
   onOpenComments: () => void;
   showToast: (message: string, variant?: ToastState["variant"]) => void;
-  /** Current framing: "cover" = Fill Screen, "contain" = Fit Art. */
-  fit: "cover" | "contain";
-  /** Toggle between Fill Screen and Fit Art (no toast — purely visual). */
-  onToggleFit: () => void;
+  /** Hides all on-screen UI (clean view); a tap on the artwork restores it. */
+  onHideUi: () => void;
   /** Subtle highlight used while the tutorial explains the quick actions. */
   highlight?: boolean;
 }
@@ -71,15 +68,13 @@ export default function ActionRail({
   onOpenArtist,
   onOpenComments,
   showToast,
-  fit,
-  onToggleFit,
+  onHideUi,
   highlight = false,
 }: ActionRailProps) {
   const { isLiked, toggleLiked, isSaved, toggleSaved } = useAppState();
 
   const liked = isLiked(artworkId);
   const saved = isSaved(artworkId);
-  const filling = fit === "cover";
 
   // Share uses the native share sheet when available, otherwise copies a link.
   const handleShare = async () => {
@@ -106,7 +101,7 @@ export default function ActionRail({
 
   return (
     <div
-      className={`absolute bottom-44 right-3 z-40 flex flex-col items-center gap-4 rounded-full p-1 transition-shadow ${
+      className={`absolute bottom-24 right-3 z-40 flex flex-col items-center gap-4 rounded-full p-1 transition-shadow ${
         highlight ? "ring-2 ring-white/60 shadow-[0_0_30px_rgba(255,255,255,0.35)]" : ""
       }`}
     >
@@ -185,26 +180,10 @@ export default function ActionRail({
         <ShareIcon className="h-5 w-5" />
       </RailButton>
 
-      {/* 7. Fullscreen / Fit Art toggle (no toast — purely visual) */}
-      <RailButton
-        label={filling ? "Fit artwork" : "Fill screen"}
-        active={!filling}
-        activeColor="text-white bg-white/15 border-white/30"
-        onClick={onToggleFit}
-      >
-        <motion.span
-          key={filling ? "fill" : "fit"}
-          initial={{ scale: 0.6, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
-          className="flex items-center justify-center"
-        >
-          {filling ? (
-            <MinimizeIcon className="h-5 w-5" />
-          ) : (
-            <MaximizeIcon className="h-5 w-5" />
-          )}
-        </motion.span>
+      {/* 7. Hide interface — collapses all UI for an unobstructed view.
+          A single tap on the artwork brings everything back. */}
+      <RailButton label="Hide interface" onClick={onHideUi}>
+        <EyeOffIcon className="h-5 w-5" />
       </RailButton>
     </div>
   );

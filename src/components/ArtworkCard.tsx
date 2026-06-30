@@ -240,8 +240,7 @@ export default function ArtworkCard({
                 onOpenArtist={() => onOpenArtist(artist.id)}
                 onOpenComments={() => setDiscussionOpen(true)}
                 showToast={showToast}
-                fit={fit}
-                onToggleFit={toggleFit}
+                onHideUi={() => setClean(true)}
                 highlight={actionsTutorial}
               />
             </div>
@@ -258,10 +257,10 @@ export default function ArtworkCard({
               onPointerLeave={handleFooterPointerCancel}
               onPointerCancel={handleFooterPointerCancel}
             >
-              <div className="pointer-events-none max-w-[78%]">
-                <div className="mb-2.5 flex flex-wrap items-center gap-2">
+              <div className="pointer-events-none max-w-[90%]">
+                <div className="mb-2.5 flex flex-nowrap items-center gap-2">
                   <span
-                    className={`rounded-full border px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.12em] ${
+                    className={`shrink-0 whitespace-nowrap rounded-full border px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.12em] ${
                       artwork.origin === "artist-original"
                         ? "border-sky-300/30 bg-sky-400/15 text-sky-200"
                         : "border-emerald-300/30 bg-emerald-400/15 text-emerald-200"
@@ -269,7 +268,7 @@ export default function ArtworkCard({
                   >
                     {originLabel(artwork.origin)}
                   </span>
-                  <span className="rounded-full border border-white/15 bg-white/10 px-2.5 py-0.5 text-[10px] font-medium tracking-wide text-white/80 backdrop-blur-md">
+                  <span className="truncate whitespace-nowrap rounded-full border border-white/15 bg-white/10 px-2.5 py-0.5 text-[10px] font-medium tracking-wide text-white/80 backdrop-blur-md">
                     {artwork.source}
                   </span>
                 </div>
@@ -284,22 +283,25 @@ export default function ArtworkCard({
                     onOpenArtist(artist.id);
                     tutorial?.report("artist");
                   }}
-                  className="pointer-events-auto mt-1.5 inline-flex items-center gap-2 text-[15px] text-white/85 transition-colors hover:text-white"
+                  className="pointer-events-auto mt-1.5 inline-flex max-w-full items-center gap-2 text-[15px] text-white/85 transition-colors hover:text-white"
                 >
                   <ArtistAvatar
                     src={getArtistAvatar(artist.id)}
                     initials={artist.initials}
-                    className="h-6 w-6 rounded-full text-[10px] font-semibold backdrop-blur-md"
+                    className="h-6 w-6 shrink-0 rounded-full text-[10px] font-semibold backdrop-blur-md"
                     fallbackClassName="bg-white/15 text-white"
                   />
-                  <span className="underline-offset-4 hover:underline">
+                  <span className="truncate whitespace-nowrap underline-offset-4 hover:underline">
                     {artist.name}
                   </span>
-                  <span className="text-white/45">· {artwork.year}</span>
+                  <span className="shrink-0 whitespace-nowrap text-white/45">
+                    · {artwork.year}
+                  </span>
                 </button>
               </div>
 
-              <div className="mt-3 flex min-h-[6.5rem] w-full flex-col items-center justify-end pb-1">
+              {/* Description trigger — centered across the full width. */}
+              <div className="mt-3.5 flex w-full justify-center">
                 <motion.button
                   type="button"
                   data-tutorial="placard-trigger"
@@ -313,9 +315,9 @@ export default function ArtworkCard({
                       ? { duration: 1.6, repeat: Infinity, ease: "easeInOut" }
                       : undefined
                   }
-                  className={`pointer-events-auto flex items-center gap-2 rounded-full border backdrop-blur-md ${
+                  className={`pointer-events-auto inline-flex items-center justify-center gap-2 rounded-full border backdrop-blur-md ${
                     placardTutorial
-                      ? "min-h-[52px] w-full max-w-[17rem] justify-center border-white/40 bg-white/20 px-5 py-3.5 text-sm text-white ring-2 ring-white/25"
+                      ? "min-h-[52px] w-full max-w-[17rem] border-white/40 bg-white/20 px-5 py-3.5 text-sm text-white ring-2 ring-white/25"
                       : "border-white/15 bg-black/30 px-4 py-2 text-xs text-white/90"
                   } font-medium`}
                 >
@@ -325,7 +327,7 @@ export default function ArtworkCard({
                   >
                     <ChevronUpIcon className="h-4 w-4" />
                   </motion.span>
-                  Swipe up for description
+                  Description
                 </motion.button>
               </div>
             </footer>

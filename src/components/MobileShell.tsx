@@ -52,6 +52,8 @@ export default function MobileShell() {
   const [screen, setScreen] = useState<Screen>("for-you");
   // For You source toggle (client sketch: "Mix of historical and freelance → add toggle").
   const [feedFilter, setFeedFilter] = useState<FeedFilter>("all");
+  // Once a source is chosen the toggle hides; it returns when For You is re-selected.
+  const [showFeedToggle, setShowFeedToggle] = useState(true);
   const [activeArtist, setActiveArtist] = useState<Artist | null>(null);
   const [activeArtworkId, setActiveArtworkId] = useState<string | null>(null);
   const [searchCategory, setSearchCategory] = useState<CategoryId | null>(null);
@@ -102,6 +104,7 @@ export default function MobileShell() {
       if (tutorialActive) return;
       setScreen(next);
       setClean(false);
+      if (next === "for-you") setShowFeedToggle(true);
       if (next !== "search") setSearchCategory(null);
     },
     [tutorialActive]
@@ -256,7 +259,7 @@ export default function MobileShell() {
 
         {/* Feed source toggle — mix / museum / freelance */}
         <AnimatePresence>
-          {showChrome && isFeedScreen(screen) && (
+          {showChrome && isFeedScreen(screen) && showFeedToggle && (
             <motion.div
               initial={{ opacity: 0, y: -6 }}
               animate={{ opacity: 1, y: 0 }}
@@ -273,7 +276,10 @@ export default function MobileShell() {
                 ).map((opt) => (
                   <button
                     key={opt.id}
-                    onClick={() => setFeedFilter(opt.id)}
+                    onClick={() => {
+                      setFeedFilter(opt.id);
+                      setShowFeedToggle(false);
+                    }}
                     className={`rounded-full px-3 py-1 text-[11px] font-medium transition-colors ${
                       feedFilter === opt.id
                         ? "bg-white text-ink"

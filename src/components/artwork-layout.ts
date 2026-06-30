@@ -2,11 +2,11 @@
 export const ARTWORK_FOOTER_HEIGHT = "15rem";
 
 export const artworkFooterClass =
-  "min-h-[15rem] px-5 pt-4 pb-[calc(env(safe-area-inset-bottom)+5.25rem)]";
+  "min-h-[15rem] px-5 pt-4 pb-[calc(env(safe-area-inset-bottom)+5rem)]";
 
 /** Positions the step-2 swipe cue directly above the description button. */
 export const tutorialFooterHintClass =
-  "bottom-[calc(env(safe-area-inset-bottom)+5.25rem)]";
+  "bottom-[calc(env(safe-area-inset-bottom)+8.5rem)]";
 
 /**
  * Standard padding for scrollable content screens so content clears the top
